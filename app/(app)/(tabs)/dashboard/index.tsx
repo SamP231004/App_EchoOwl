@@ -1,13 +1,10 @@
-import React, { useRef } from "react";
+import { useState } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   Alert,
   ActivityIndicator,
-  TouchableOpacity,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -17,33 +14,38 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import BottomSheet from "@gorhom/bottom-sheet";
-import { Menu } from "lucide-react-native";
 
-import { DashboardEmptyState } from "./components/DashboardEmptyState";
+import { DashboardDrawer } from "@src/components/DashboardDrawer";
+import { AppHeader } from "@src/components/AppHeader";
+
+import { DashboardEmptyState } from "@src/components/DashboardEmptyState";
 import {
   CategoryCard,
   Category,
-} from "./components/CategoryCard";
+} from "@src/components/CategoryCard";
 
-import { DashboardDrawer } from "@src/components/DashboardDrawer";
 import { apiService } from "@src/lib/apiClient";
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { isLoaded, isSignedIn } = useAuth();
 
-  const queryClient = useQueryClient();
+  const { isLoaded, isSignedIn } =
+    useAuth();
 
-  const bottomSheetRef =
-    useRef<BottomSheet>(null);
+  const queryClient =
+    useQueryClient();
+
+  const [menuOpen, setMenuOpen] =
+    useState(false);
 
   const {
     data: categories = [],
     isPending,
     refetch,
   } = useQuery<Category[]>({
-    queryKey: ["user-event-categories"],
+    queryKey: [
+      "user-event-categories",
+    ],
 
     queryFn: async () => {
       const data =
@@ -134,39 +136,11 @@ export default function DashboardScreen() {
         edges={["top"]}
         style={styles.container}
       >
-        {/* Header */}
-
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("../../../../assets/images/brand-asset-profile-picture.png")}
-              style={styles.logoImage}
-            />
-
-            <Text style={styles.logo}>
-              Echo
-              <Text style={styles.logoBlue}>
-                Owl
-              </Text>
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={
-              styles.menuButton
-            }
-            onPress={() =>
-              bottomSheetRef.current?.expand()
-            }
-          >
-            <Menu
-              size={30}
-              color="#0F172A"
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Content */}
+        <AppHeader
+          onMenu={() =>
+            setMenuOpen(true)
+          }
+        />
 
         {!categories.length ? (
           <DashboardEmptyState
@@ -195,12 +169,12 @@ export default function DashboardScreen() {
             onRefresh={
               refetch
             }
-            contentContainerStyle={
-              styles.listContent
-            }
             showsVerticalScrollIndicator={
               false
             }
+            contentContainerStyle={{
+              paddingBottom: 40,
+            }}
             renderItem={({
               item,
             }) => (
@@ -231,8 +205,9 @@ export default function DashboardScreen() {
       </SafeAreaView>
 
       <DashboardDrawer
-        sheetRef={
-          bottomSheetRef
+        visible={menuOpen}
+        onClose={() =>
+          setMenuOpen(false)
         }
       />
     </>
@@ -246,46 +221,6 @@ const styles =
       backgroundColor:
         "#F8FAFC",
       paddingHorizontal: 20,
-    },
-
-    header: {
-      flexDirection: "row",
-      alignItems:
-        "center",
-      justifyContent:
-        "space-between",
-      paddingTop: 8,
-      marginBottom: 24,
-    },
-
-    logoContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-
-    logoImage: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      marginRight: 10,
-    },
-
-    logo: {
-      fontSize: 34,
-      fontWeight: "700",
-      color: "#111827",
-    },
-
-    logoBlue: {
-      color: "#3B5CCC",
-    },
-
-    menuButton: {
-      padding: 4,
-    },
-
-    listContent: {
-      paddingBottom: 40,
     },
 
     loader: {

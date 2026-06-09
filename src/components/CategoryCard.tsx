@@ -1,4 +1,3 @@
-import React from "react";
 import {
     View,
     Text,
@@ -16,6 +15,9 @@ import {
     format,
     formatDistanceToNow,
 } from "date-fns";
+import {
+  formatShortDate,
+} from "@src/lib/date";
 
 export interface Category {
     id: string;
@@ -89,10 +91,11 @@ export function CategoryCard({
 
                         {category.createdAt && (
                             <Text style={styles.date}>
-                                {format(
-                                    new Date(category.createdAt),
-                                    "MMM d, yyyy"
-                                )}
+                                <Text style={styles.date}>
+                                    {formatShortDate(
+                                        category.createdAt
+                                    )}
+                                </Text>
                             </Text>
                         )}
                     </View>

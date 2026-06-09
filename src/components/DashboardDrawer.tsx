@@ -1,9 +1,10 @@
-import BottomSheet from "@gorhom/bottom-sheet";
-import { useMemo } from "react";
+import React from "react";
 import {
+    Modal,
     View,
     Text,
     TouchableOpacity,
+    StyleSheet,
 } from "react-native";
 import {
     Home,
@@ -14,143 +15,170 @@ import {
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 
+interface Props {
+    visible: boolean;
+    onClose: () => void;
+}
+
 export function DashboardDrawer({
-    sheetRef,
-}: any) {
+    visible,
+    onClose,
+}: Props) {
     const router = useRouter();
 
-    const snapPoints = useMemo(
-        () => ["70%"],
-        []
-    );
+    const navigate = (path: string) => {
+        onClose();
+        router.push(path as any);
+    };
 
     return (
-        <BottomSheet
-            ref={sheetRef}
-            index={-1}
-            snapPoints={snapPoints}
-            enablePanDownToClose
+        <Modal
+            visible={visible}
+            transparent
+            animationType="slide"
         >
-            <View
-                style={{
-                    flex: 1,
-                    padding: 24,
-                }}
+            <TouchableOpacity
+                style={styles.overlay}
+                activeOpacity={1}
+                onPress={onClose}
             >
-                <View
-                    style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontSize: 28,
-                            fontWeight: "700",
-                            color: "#3B5CCC",
-                        }}
-                    >
-                        EchoOwl
+                <View style={styles.sheet}>
+                    <View style={styles.header}>
+                        <Text style={styles.logo}>
+                            Echo
+                            <Text style={styles.logoBlue}>
+                                Owl
+                            </Text>
+                        </Text>
+
+                        <TouchableOpacity onPress={onClose}>
+                            <X size={26} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.section}>
+                        Overview
                     </Text>
 
-                    <TouchableOpacity>
-                        <X />
+                    <TouchableOpacity
+                        style={styles.item}
+                        onPress={() =>
+                            navigate(
+                                "/(app)/(tabs)/dashboard"
+                            )
+                        }
+                    >
+                        <Home size={20} />
+                        <Text style={styles.itemText}>
+                            Dashboard
+                        </Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.section}>
+                        Account
+                    </Text>
+
+                    <TouchableOpacity
+                        style={styles.item}
+                        onPress={() =>
+                            navigate(
+                                "/(app)/(tabs)/upgrade"
+                            )
+                        }
+                    >
+                        <Diamond size={20} />
+                        <Text style={styles.itemText}>
+                            Upgrade
+                        </Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.section}>
+                        Settings
+                    </Text>
+
+                    <TouchableOpacity
+                        style={styles.item}
+                        onPress={() =>
+                            navigate(
+                                "/(app)/(tabs)/api-keys"
+                            )
+                        }
+                    >
+                        <KeyRound size={20} />
+                        <Text style={styles.itemText}>
+                            API Key
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.item}
+                        onPress={() =>
+                            navigate(
+                                "/(app)/(tabs)/settings"
+                            )
+                        }
+                    >
+                        <Settings size={20} />
+                        <Text style={styles.itemText}>
+                            Account Settings
+                        </Text>
                     </TouchableOpacity>
                 </View>
-
-                <Text
-                    style={{
-                        marginTop: 24,
-                        color: "#94A3B8",
-                    }}
-                >
-                    Overview
-                </Text>
-
-                <TouchableOpacity
-                    style={{
-                        flexDirection: "row",
-                        marginTop: 16,
-                        gap: 12,
-                    }}
-                    onPress={() =>
-                        router.push(
-                            "/(app)/(tabs)/dashboard"
-                        )
-                    }
-                >
-                    <Home size={20} />
-                    <Text>Dashboard</Text>
-                </TouchableOpacity>
-
-                <Text
-                    style={{
-                        marginTop: 32,
-                        color: "#94A3B8",
-                    }}
-                >
-                    Account
-                </Text>
-
-                <TouchableOpacity
-                    style={{
-                        flexDirection: "row",
-                        marginTop: 16,
-                        gap: 12,
-                    }}
-                    onPress={() =>
-                        router.push(
-                            "/(app)/(tabs)/upgrade"
-                        )
-                    }
-                >
-                    <Diamond size={20} />
-                    <Text>Upgrade</Text>
-                </TouchableOpacity>
-
-                <Text
-                    style={{
-                        marginTop: 32,
-                        color: "#94A3B8",
-                    }}
-                >
-                    Settings
-                </Text>
-
-                <TouchableOpacity
-                    style={{
-                        flexDirection: "row",
-                        marginTop: 16,
-                        gap: 12,
-                    }}
-                    onPress={() =>
-                        router.push(
-                            "/(app)/(tabs)/api-keys"
-                        )
-                    }
-                >
-                    <KeyRound size={20} />
-                    <Text>API Key</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={{
-                        flexDirection: "row",
-                        marginTop: 16,
-                        gap: 12,
-                    }}
-                    onPress={() =>
-                        router.push(
-                            "/(app)/(tabs)/settings"
-                        )
-                    }
-                >
-                    <Settings size={20} />
-                    <Text>
-                        Account Settings
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </BottomSheet>
+            </TouchableOpacity>
+        </Modal>
     );
 }
+
+const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor:
+            "rgba(0,0,0,0.25)",
+        justifyContent: "flex-end",
+    },
+
+    sheet: {
+        backgroundColor: "#FFF",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        minHeight: "45%",
+    },
+
+    header: {
+        flexDirection: "row",
+        justifyContent:
+            "space-between",
+        alignItems: "center",
+        marginBottom: 24,
+    },
+
+    logo: {
+        fontSize: 30,
+        fontWeight: "700",
+        color: "#111827",
+    },
+
+    logoBlue: {
+        color: "#3B5CCC",
+    },
+
+    section: {
+        color: "#94A3B8",
+        marginTop: 20,
+        marginBottom: 12,
+        fontWeight: "600",
+    },
+
+    item: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        paddingVertical: 12,
+    },
+
+    itemText: {
+        fontSize: 16,
+        color: "#0F172A",
+    },
+});
