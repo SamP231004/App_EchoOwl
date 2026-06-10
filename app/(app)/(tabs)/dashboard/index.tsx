@@ -5,6 +5,8 @@ import {
   FlatList,
   Alert,
   ActivityIndicator,
+  TouchableOpacity,
+  Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -17,12 +19,12 @@ import {
 
 import { DashboardDrawer } from "@src/components/DashboardDrawer";
 import { AppHeader } from "@src/components/AppHeader";
-
 import { DashboardEmptyState } from "@src/components/DashboardEmptyState";
 import {
   CategoryCard,
   Category,
 } from "@src/components/CategoryCard";
+import { CreateCategoryModal } from "@src/components/CreateCategoryModal";
 
 import { apiService } from "@src/lib/apiClient";
 
@@ -36,6 +38,9 @@ export default function DashboardScreen() {
     useQueryClient();
 
   const [menuOpen, setMenuOpen] =
+    useState(false);
+
+  const [showCreateModal, setShowCreateModal] =
     useState(false);
 
   const {
@@ -151,58 +156,90 @@ export default function DashboardScreen() {
               quickstartMutation.mutate()
             }
             onCreateCategory={() =>
-              Alert.alert(
-                "Coming Soon",
-                "Create Category Modal"
-              )
+              setShowCreateModal(true)
             }
           />
         ) : (
-          <FlatList
-            data={categories}
-            keyExtractor={(
-              item
-            ) => item.id}
-            refreshing={
-              isPending
-            }
-            onRefresh={
-              refetch
-            }
-            showsVerticalScrollIndicator={
-              false
-            }
-            contentContainerStyle={{
-              paddingBottom: 40,
-            }}
-            renderItem={({
-              item,
-            }) => (
-              <CategoryCard
-                category={
-                  item
+          <>
+            <FlatList
+              data={categories}
+              keyExtractor={(
+                item
+              ) => item.id}
+              refreshing={
+                isPending
+              }
+              onRefresh={
+                refetch
+              }
+              showsVerticalScrollIndicator={
+                false
+              }
+              contentContainerStyle={{
+                paddingBottom: 100,
+              }}
+              renderItem={({
+                item,
+              }) => (
+                <CategoryCard
+                  category={
+                    item
+                  }
+                  onPress={() =>
+                    router.push({
+                      pathname:
+                        "/(app)/(tabs)/dashboard/category/[name]",
+                      params:
+                      {
+                        name:
+                          item.name,
+                        totalEvents: item.eventsCount,
+                      },
+                    })
+                  }
+                  onDelete={() =>
+                    handleDelete(
+                      item.name
+                    )
+                  }
+                />
+              )}
+            />
+
+            <View
+              style={
+                styles.fabContainer
+              }
+            >
+              <TouchableOpacity
+                style={
+                  styles.fab
                 }
                 onPress={() =>
-                  router.push({
-                    pathname:
-                      "/(app)/(tabs)/dashboard/category/[name]",
-                    params:
-                    {
-                      name:
-                        item.name,
-                    },
-                  })
-                }
-                onDelete={() =>
-                  handleDelete(
-                    item.name
+                  setShowCreateModal(
+                    true
                   )
                 }
-              />
-            )}
-          />
+              >
+                <Text
+                  style={
+                    styles.fabText
+                  }
+                >
+                  +
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
       </SafeAreaView>
+
+      <CreateCategoryModal
+        visible={showCreateModal}
+        onClose={() =>
+          setShowCreateModal(false)
+        }
+      />
 
       <DashboardDrawer
         visible={menuOpen}
@@ -231,5 +268,38 @@ const styles =
         "center",
       backgroundColor:
         "#F8FAFC",
+    },
+
+    fabContainer: {
+      position: "absolute",
+      right: 20,
+      bottom: 30,
+    },
+
+    fab: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor:
+        "#3B5CCC",
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+      elevation: 8,
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+    },
+
+    fabText: {
+      color: "#FFF",
+      fontSize: 32,
+      fontWeight: "600",
+      marginTop: -2,
     },
   });

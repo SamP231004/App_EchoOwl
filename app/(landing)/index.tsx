@@ -67,7 +67,7 @@ export default function Landing() {
         {/* Hero */}
         <View style={styles.hero}>
           <Image
-            source={require("../../assets/images/brand-asset-wave.png")}
+            source={require("assets/images/brand-asset-wave.png")}
             style={styles.wave}
           />
 

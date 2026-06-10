@@ -3,186 +3,210 @@ import {
     View,
     Text,
     StyleSheet,
-    TextInput,
+    Linking,
     TouchableOpacity,
-    Alert,
+    ScrollView,
 } from "react-native";
-import * as Clipboard from "expo-clipboard";
-import { Check, Copy } from "lucide-react-native";
-import { useUsageStats } from "@src/hooks/useApi";
+
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+
+import { AppHeader } from "@src/components/AppHeader";
+import { DashboardDrawer } from "@src/components/DashboardDrawer";
 
 export default function ApiKeysScreen() {
-    const [copied, setCopied] = useState(false);
+    const router = useRouter();
 
-    const { data, isLoading } = useUsageStats();
+    const [menuOpen, setMenuOpen] =
+        useState(false);
 
-    const apiKey = data?.apiKey ?? "";
-
-    const copyApiKey = async () => {
-        try {
-            await Clipboard.setStringAsync(apiKey);
-
-            setCopied(true);
-
-            setTimeout(() => {
-                setCopied(false);
-            }, 2000);
-        } catch {
-            Alert.alert(
-                "Error",
-                "Failed to copy API key."
-            );
-        }
+    const openWebApp = () => {
+        Linking.openURL(
+            "https://echo-owl.vercel.app/"
+        );
     };
 
-    if (isLoading) {
-        return (
-            <View style={styles.center}>
-                <Text>Loading...</Text>
-            </View>
-        );
-    }
-
     return (
-        <View style={styles.container}>
-            <Text style={styles.heading}>
-                API Key
-            </Text>
+        <>
+            <SafeAreaView
+                style={styles.container}
+                edges={["top"]}
+            >
+                <AppHeader
+                    showBack
+                    onBack={() =>
+                        router.back()
+                    }
+                    onMenu={() =>
+                        setMenuOpen(true)
+                    }
+                />
 
-            <View style={styles.card}>
-                <Text style={styles.label}>
-                    Your API Key
-                </Text>
+                <ScrollView
+                    contentContainerStyle={
+                        styles.content
+                    }
+                >
+                    <Text style={styles.heading}>
+                        API Keys
+                    </Text>
 
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        value={apiKey}
-                        editable={false}
-                        secureTextEntry
-                        style={styles.input}
-                    />
+                    <View style={styles.card}>
+                        <Text style={styles.title}>
+                            Manage API Keys on the Web Dashboard
+                        </Text>
 
-                    <TouchableOpacity
-                        style={styles.copyButton}
-                        onPress={copyApiKey}
+                        <Text
+                            style={
+                                styles.description
+                            }
+                        >
+                            API keys are currently
+                            only available through
+                            the Echo Owl web
+                            dashboard. To view,
+                            copy, or manage your
+                            API key, please sign in
+                            to the web application.
+                        </Text>
+
+                        <TouchableOpacity
+                            style={
+                                styles.button
+                            }
+                            onPress={
+                                openWebApp
+                            }
+                        >
+                            <Text
+                                style={
+                                    styles.buttonText
+                                }
+                            >
+                                Open Web Dashboard
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View
+                        style={
+                            styles.infoCard
+                        }
                     >
-                        {copied ? (
-                            <Check
-                                size={18}
-                                color="#3B5CCC"
-                            />
-                        ) : (
-                            <Copy
-                                size={18}
-                                color="#3B5CCC"
-                            />
-                        )}
-                    </TouchableOpacity>
-                </View>
+                        <Text
+                            style={
+                                styles.infoTitle
+                            }
+                        >
+                            Why can't I access my
+                            API key here?
+                        </Text>
 
-                <Text style={styles.helper}>
-                    Keep your API key secret and
-                    never share it publicly.
-                </Text>
-            </View>
+                        <Text
+                            style={
+                                styles.infoText
+                            }
+                        >
+                            For security reasons,
+                            API key management is
+                            currently supported
+                            only on the web
+                            dashboard.
+                        </Text>
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
 
-            <View style={styles.exampleCard}>
-                <Text style={styles.exampleTitle}>
-                    Example Usage
-                </Text>
-
-                <Text style={styles.code}>
-                    {`fetch("https://your-api.com/api/events", {
-  method: "POST",
-  headers: {
-    Authorization: "Bearer YOUR_API_KEY"
-  }
-})`}
-                </Text>
-            </View>
-        </View>
+            <DashboardDrawer
+                visible={menuOpen}
+                onClose={() =>
+                    setMenuOpen(false)
+                }
+            />
+        </>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#F8FAFC",
-        padding: 20,
-    },
+const styles =
+    StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor:
+                "#F8FAFC",
+        },
 
-    center: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
+        content: {
+            padding: 20,
+            gap: 16,
+        },
 
-    heading: {
-        fontSize: 30,
-        fontWeight: "700",
-        color: "#0F172A",
-        marginBottom: 24,
-    },
+        heading: {
+            fontSize: 30,
+            fontWeight: "700",
+            color: "#0F172A",
+            marginBottom: 8,
+        },
 
-    card: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 18,
-        padding: 20,
+        card: {
+            backgroundColor:
+                "#FFFFFF",
+            borderRadius: 18,
+            padding: 20,
+            borderWidth: 1,
+            borderColor:
+                "#E5E7EB",
+        },
 
-        borderWidth: 1,
-        borderColor: "#E5E7EB",
-    },
+        title: {
+            fontSize: 18,
+            fontWeight: "700",
+            color: "#0F172A",
+            marginBottom: 12,
+        },
 
-    label: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#0F172A",
-        marginBottom: 10,
-    },
+        description: {
+            fontSize: 15,
+            color: "#64748B",
+            lineHeight: 24,
+        },
 
-    inputContainer: {
-        position: "relative",
-        justifyContent: "center",
-    },
+        button: {
+            marginTop: 20,
+            backgroundColor:
+                "#3B5CCC",
+            height: 52,
+            borderRadius: 14,
+            justifyContent:
+                "center",
+            alignItems:
+                "center",
+        },
 
-    input: {
-        height: 56,
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-        borderRadius: 14,
-        backgroundColor: "#FFFFFF",
-        paddingHorizontal: 16,
-        paddingRight: 55,
-        color: "#64748B",
-    },
+        buttonText: {
+            color: "#FFFFFF",
+            fontWeight: "700",
+            fontSize: 15,
+        },
 
-    copyButton: {
-        position: "absolute",
-        right: 14,
-    },
+        infoCard: {
+            backgroundColor:
+                "#FFFFFF",
+            borderRadius: 18,
+            padding: 20,
+            borderWidth: 1,
+            borderColor:
+                "#E5E7EB",
+        },
 
-    helper: {
-        marginTop: 12,
-        color: "#64748B",
-        lineHeight: 22,
-    },
+        infoTitle: {
+            fontSize: 16,
+            fontWeight: "700",
+            color: "#0F172A",
+            marginBottom: 8,
+        },
 
-    exampleCard: {
-        marginTop: 20,
-        backgroundColor: "#111827",
-        borderRadius: 16,
-        padding: 16,
-    },
-
-    exampleTitle: {
-        color: "#FFFFFF",
-        fontWeight: "600",
-        marginBottom: 12,
-    },
-
-    code: {
-        color: "#CBD5E1",
-        fontFamily: "monospace",
-        lineHeight: 22,
-    },
-});
+        infoText: {
+            color: "#64748B",
+            lineHeight: 22,
+        },
+    });

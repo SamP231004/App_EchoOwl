@@ -115,16 +115,32 @@ export const useCreateCheckoutSession = () => {
   })
 }
 
+export const useDiscordID = () => {
+  return useQuery({
+    queryKey: ["discord-id"],
+    queryFn: async () => {
+      return await apiService.project.getDiscordID();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
 // Hook for setting Discord ID
 export const useSetDiscordID = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (discordId: string) => {
-      return await apiService.project.setDiscordID(discordId)
+      return await apiService.project.setDiscordID(discordId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-plan"] })
+      queryClient.invalidateQueries({
+        queryKey: ["discord-id"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["user-plan"],
+      });
     },
-  })
-}
+  });
+};

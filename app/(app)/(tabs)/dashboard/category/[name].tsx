@@ -45,13 +45,18 @@ export default function CategoryScreen() {
   const [menuOpen, setMenuOpen] =
     useState(false);
 
-  const { name } =
+  const { name, totalEvents: categoryTotalEventsParam } =
     useLocalSearchParams<{
       name: string;
+      totalEvents: string;
     }>();
 
+  const categoryTotalEvents = Number(
+    categoryTotalEventsParam ?? 0
+  );
+
   const [activeTab, setActiveTab] =
-    useState<TimeRange>("today");
+    useState<TimeRange>("month");
 
   const {
     data,
@@ -119,7 +124,7 @@ export default function CategoryScreen() {
           }
         />
 
-        {!events.length ? (
+        {!categoryTotalEvents ? (
           <EmptyCategoryState
             categoryName={
               name ?? ""
@@ -128,13 +133,11 @@ export default function CategoryScreen() {
         ) : (
           <>
             {/* Title */}
-
             <Text style={styles.heading}>
               {name}
             </Text>
 
             {/* Tabs */}
-
             <View style={styles.tabs}>
               {(
                 [
@@ -180,7 +183,6 @@ export default function CategoryScreen() {
             </View>
 
             {/* Metrics */}
-
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={
@@ -248,7 +250,6 @@ export default function CategoryScreen() {
             </ScrollView>
 
             {/* Event Overview */}
-
             <Text
               style={
                 styles.sectionTitle
@@ -257,92 +258,116 @@ export default function CategoryScreen() {
               Event Overview
             </Text>
 
-            <FlatList
-              data={events}
-              keyExtractor={(
-                item: any
-              ) =>
-                item.id
-              }
-              refreshing={
-                isPending
-              }
-              onRefresh={
-                refetch
-              }
-              showsVerticalScrollIndicator={
-                false
-              }
-              contentContainerStyle={{
-                paddingBottom: 40,
-              }}
-              renderItem={({ item }: any) => (
-                <View style={styles.eventCard}>
-                  <View style={styles.eventTopRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.eventName}>
-                        {item.name}
-                      </Text>
+            {events.length === 0 ? (
+              <View
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 20,
+                  padding: 24,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "#E2E8F0",
+                  marginBottom: 390,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: "#0F172A",
+                  }}
+                >
+                  No events found
+                </Text>
 
-                      <View style={styles.eventDateRow}>
-                        <Calendar
-                          size={14}
-                          color="#64748B"
-                        />
+                <Text
+                  style={{
+                    marginTop: 8,
+                    textAlign: "center",
+                    color: "#64748B",
+                  }}
+                >
+                  No events were recorded for this {activeTab} range.
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={events}
+                keyExtractor={(item: any) => item.id}
+                refreshing={isPending}
+                onRefresh={refetch}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingBottom: 40,
+                }}
+                renderItem={({ item }: any) => (
+                  <View style={styles.eventCard}>
+                    <View style={styles.eventTopRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.eventName}>
+                          {item.name}
+                        </Text>
 
-                        <Text style={styles.eventDate}>
-                          {formatDateTime(
-                            item.createdAt
-                          )}
+                        <View style={styles.eventDateRow}>
+                          <Calendar
+                            size={14}
+                            color="#64748B"
+                          />
+
+                          <Text style={styles.eventDate}>
+                            {formatDateTime(
+                              item.createdAt
+                            )}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          item.deliveryStatus ===
+                            "DELIVERED"
+                            ? styles.delivered
+                            : item.deliveryStatus ===
+                              "FAILED"
+                              ? styles.failed
+                              : styles.pending,
+                        ]}
+                      >
+                        <Text
+                          style={styles.statusText}
+                        >
+                          {item.deliveryStatus}
                         </Text>
                       </View>
                     </View>
 
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        item.deliveryStatus ===
-                          "DELIVERED"
-                          ? styles.delivered
-                          : item.deliveryStatus ===
-                            "FAILED"
-                            ? styles.failed
-                            : styles.pending,
-                      ]}
-                    >
-                      <Text
-                        style={styles.statusText}
+                    {/* <Text style={styles.message}>
+        {item.formattedMessage}
+      </Text> */}
+
+                    <View style={styles.divider} />
+
+                    {Object.entries(
+                      item.fields ?? {}
+                    ).map(([key, value]) => (
+                      <View
+                        key={key}
+                        style={styles.fieldRow}
                       >
-                        {item.deliveryStatus}
-                      </Text>
-                    </View>
+                        <Text style={styles.fieldKey}>
+                          {key}
+                        </Text>
+
+                        <Text style={styles.fieldValue}>
+                          {String(value)}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
-
-                  {/* <Text style={styles.message}>
-                    {item.formattedMessage}
-                  </Text> */}
-
-                  <View style={styles.divider} />
-
-                  {Object.entries(
-                    item.fields ?? {}
-                  ).map(([key, value]) => (
-                    <View
-                      key={key}
-                      style={styles.fieldRow}
-                    >
-                      <Text style={styles.fieldKey}>
-                        {key}
-                      </Text>
-
-                      <Text style={styles.fieldValue}>
-                        {String(value)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            />
+                )}
+              />
+            )}
           </>
         )}
       </SafeAreaView>
@@ -413,12 +438,13 @@ const styles =
     },
 
     metricsContainer: {
-      // paddingBottom: 20,
+      marginBottom: 20,
+      height: 270,
     },
 
     metricCard: {
       width: 180,
-      height: 300,
+      height: 150,
       backgroundColor: "#FFFFFF",
       borderRadius: 20,
       padding: 20,

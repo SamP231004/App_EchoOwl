@@ -14,6 +14,8 @@ import {
     X,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { useUser } from "@clerk/expo";
+import { Image } from "react-native";
 
 interface Props {
     visible: boolean;
@@ -30,6 +32,8 @@ export function DashboardDrawer({
         onClose();
         router.push(path as any);
     };
+
+    const { user } = useUser();
 
     return (
         <Modal
@@ -123,7 +127,42 @@ export function DashboardDrawer({
                             Account Settings
                         </Text>
                     </TouchableOpacity>
+
+                    <View style={styles.footer}>
+                        <View style={styles.divider} />
+
+                        <View style={styles.userRow}>
+                            <Image
+                                source={{
+                                    uri:
+                                        user?.imageUrl ||
+                                        "https://via.placeholder.com/40",
+                                }}
+                                style={styles.avatar}
+                            />
+
+                            <View style={styles.userInfo}>
+                                <Text
+                                    style={styles.userName}
+                                    numberOfLines={1}
+                                >
+                                    {user?.fullName ||
+                                        user?.firstName ||
+                                        "User"}
+                                </Text>
+
+                                <Text
+                                    style={styles.userEmail}
+                                    numberOfLines={1}
+                                >
+                                    {user?.primaryEmailAddress
+                                        ?.emailAddress || ""}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
                 </View>
+
             </TouchableOpacity>
         </Modal>
     );
@@ -180,5 +219,43 @@ const styles = StyleSheet.create({
     itemText: {
         fontSize: 16,
         color: "#0F172A",
+    },
+    footer: {
+        marginTop: "auto",
+        paddingTop: 20,
+    },
+
+    divider: {
+        height: 1,
+        backgroundColor: "#E5E7EB",
+        marginBottom: 16,
+    },
+
+    userRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+    },
+
+    userInfo: {
+        marginLeft: 12,
+        flex: 1,
+    },
+
+    userName: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#111827",
+    },
+
+    userEmail: {
+        fontSize: 13,
+        color: "#6B7280",
+        marginTop: 2,
     },
 });
