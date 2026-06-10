@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import {
     Home,
-    Diamond,
+    Crown,
     KeyRound,
     Settings,
     X,
@@ -90,7 +90,7 @@ export function DashboardDrawer({
                             )
                         }
                     >
-                        <Diamond size={20} />
+                        <Crown size={20} />
                         <Text style={styles.itemText}>
                             Upgrade
                         </Text>

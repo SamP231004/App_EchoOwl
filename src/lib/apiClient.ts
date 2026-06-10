@@ -68,9 +68,6 @@ export const getApiClient = async (): Promise<AxiosInstance> => {
     apiClient.interceptors.request.use(async (config) => {
       try {
         const token = authTokenProvider ? await authTokenProvider() : null;
-
-        console.log("🔑 AXIOS INTERCEPTOR TOKEN:", token ? `Found! Starts with ${token.substring(0, 15)}...` : "UNDEFINED!");
-
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         }
@@ -181,6 +178,13 @@ export const apiService = {
     getUserPlan: async () => {
       const client = await getApiClient()
       const response = await client.get("/api/payment/getUserPlan")
+      return response.data
+    },
+    createMobileCheckoutSession: async () => {
+      const client = await getApiClient()
+      const response = await client.post(
+        "/api/payment/createMobileCheckoutSession"
+      )
       return response.data
     },
   },

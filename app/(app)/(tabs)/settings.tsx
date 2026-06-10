@@ -39,7 +39,7 @@ export default function SettingsScreen() {
         async () => {
             try {
                 await signOut();
-                router.replace("/sign-in");
+                router.replace("/");
             } catch {
                 Alert.alert(
                     "Error",

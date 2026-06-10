@@ -107,10 +107,10 @@ export const useUsageStats = () => {
 }
 
 // Hook for creating checkout session
-export const useCreateCheckoutSession = () => {
+export const useCreateMobileCheckoutSession = () => {
   return useMutation({
     mutationFn: async () => {
-      return await apiService.payment.createCheckoutSession()
+      return await apiService.payment.createMobileCheckoutSession()
     },
   })
 }

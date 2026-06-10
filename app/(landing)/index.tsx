@@ -28,9 +28,9 @@ export default function Landing() {
           </Text>
 
           <View style={styles.nav}>
-            <TouchableOpacity>
+            {/* <TouchableOpacity>
               <Text style={styles.navLink}>Pricing</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {isSignedIn ? (
               <TouchableOpacity
