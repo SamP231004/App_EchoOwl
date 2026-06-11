@@ -55,8 +55,12 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "12d244f9-cc40-4414-a67d-666e8dae8d99"
+      },
+      "router": {
+        "origin": false
       }
-    }
+    },
+    "owner": "samp231004"
   }
 }

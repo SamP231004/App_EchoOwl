@@ -7,7 +7,7 @@ export default function SSOCallback() {
 
     useEffect(() => {
         router.replace("/(app)/(tabs)/dashboard");
-    }, []);
+    }, [router]);
 
     return (
         <View

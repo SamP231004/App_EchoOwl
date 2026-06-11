@@ -1,195 +1,223 @@
-# EchoOwl - React Native + Expo
+# 🦉 EchoOwl Mobile
 
-This is the React Native + Expo 54.0.8 mobile version of EchoOwl - a production-ready SaaS event monitoring platform with real-time Discord alerts.
+EchoOwl Mobile is the React Native + Expo version of EchoOwl, a SaaS event monitoring platform for tracking product events, organizing event categories, and receiving alerts through the EchoOwl backend.
 
-## 📱 Features
+This app is built for Android and iOS with Expo Router, Clerk authentication, React Query, Zustand, and a Spring Boot REST API.
 
-- 🔐 **Authentication** - Clerk integration for secure sign-in/sign-up
-- 📊 **Dashboard** - Manage event categories with emoji and color customization
-- 📈 **Activity** - Monitor recent events and activity
-- ⚙️ **Settings** - Account management and plan upgrades
-- 💳 **Plans** - FREE and PRO plans with different quotas
-- 📱 **Responsive** - Mobile-first design for iOS and Android
+> 📘 Migration notes: see [MIGRATION.md](./MIGRATION.md) for the full Next.js → React Native + Expo migration guide.
+
+## ✨ Highlights
+
+| Area | What EchoOwl Mobile Supports |
+|---|---|
+| 🔐 Authentication | Clerk sign in, sign up, email verification, and session handling |
+| 📊 Dashboard | View event categories, usage, category stats, and recent activity |
+| 🧩 Categories | Create and inspect event categories with mobile-first screens |
+| 🔑 API Keys | View API key settings screen; editing/viewing sensitive keys currently uses the web version |
+| 💳 Billing | Mobile upgrade flow with Stripe checkout integration |
+| ⚙️ Account | Account settings, sign out, plan information, and usage limits |
+| 📱 Distribution | Standalone Android APK through Expo EAS Build |
+
+## ⚠️ Current Mobile Limitation
+
+The mobile app currently does **not** allow editing or viewing the API key or Discord key directly. Please use the EchoOwl web version for API key and Discord key management.
 
 ## 🛠️ Tech Stack
 
 | Category | Technology |
-|--------|------------|
-| Framework | React Native, Expo 54.0.8 |
+|---|---|
+| Mobile Framework | React Native, Expo |
+| Routing | Expo Router |
 | Language | TypeScript |
-| State Management | Zustand, React Query |
-| Authentication | Clerk |
+| Auth | Clerk Expo SDK |
+| Data Fetching | TanStack React Query |
+| State | Zustand |
 | HTTP Client | Axios |
-| Form Validation | Zod, React Hook Form |
-| Navigation | Expo Router |
+| Forms & Validation | React Hook Form, Zod |
+| Storage | Expo Secure Store |
+| Payments | Stripe checkout through backend API |
+| Backend | Spring Boot REST API |
 | Icons | Lucide React Native |
-| UI Components | Custom components |
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm/pnpm
-- Expo CLI: `npm install -g expo-cli`
-- iOS: Xcode (for iOS development)
-- Android: Android Studio (for Android development)
+- Node.js 18+
+- npm or pnpm
+- Expo CLI / EAS CLI
+- Android Studio for emulator builds, or a physical Android device
+- A Clerk publishable key
+- A running EchoOwl backend API
 
-### Installation
+### Install
 
-1. **Install dependencies:**
-   ```bash
-   cd app
-   pnpm install
-   # or
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. **Set up environment variables:**
-   Create an `.env` file in the `app` directory:
-   ```env
-   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key_here
-   EXPO_PUBLIC_API_URL=http://localhost:8080
-   ```
+### Environment
 
-3. **Run the app:**
-   ```bash
-   # Start Expo development server
-   pnpm start
+Create `.env` in the project root:
 
-   # For iOS
-   pnpm ios
+```env
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+EXPO_PUBLIC_API_URL=https://your-backend-url.com
+```
 
-   # For Android
-   pnpm android
+For EAS builds, the same values must be present in `eas.json` or configured through EAS environment variables.
 
-   # For Web
-   pnpm web
-   ```
+### Run Locally
+
+```bash
+npm start
+```
+
+Useful commands:
+
+```bash
+npm run android
+npm run ios
+npm run web
+npm run typecheck
+npm run lint
+```
+
+## 📦 Android APK Build
+
+Build a preview APK:
+
+```bash
+eas build --platform android --profile preview
+```
+
+Expo stores the Android signing keystore in the cloud for this project. Keep using the same Expo account for future builds so users can install updates over older APKs.
+
+## 🔌 API Integration
+
+The app talks to the EchoOwl Spring Boot backend using REST endpoints.
+
+| Feature | Endpoint |
+|---|---|
+| Auth sync | `GET /api/auth/getDatabaseSyncStatus` |
+| Categories | `GET /api/category/getEventCategories` |
+| Create category | `POST /api/category/createEventCategory` |
+| Delete category | `POST /api/category/deleteCategory` |
+| Category events | `GET /api/category/getEventsByCategoryName` |
+| Plan | `GET /api/payment/getUserPlan` |
+| Checkout | `POST /api/payment/createMobileCheckoutSession` |
+| Usage | `GET /api/project/getUsage` |
+| Discord ID | `POST /api/project/setDiscordID` |
 
 ## 📁 Project Structure
 
-```
-app/
-├── app/                        # Expo Router file-based routing
-│   ├── (auth)/                # Authentication screens
-│   │   ├── sign-in.tsx
-│   │   ├── sign-up.tsx
-│   │   └── welcome.tsx
-│   ├── (app)/                 # App screens (protected)
-│   │   └── (tabs)/            # Bottom tab navigation
-│   │       ├── dashboard/
-│   │       ├── activity.tsx
-│   │       └── settings.tsx
-│   └── _layout.tsx            # Root layout
+```text
+.
+├── app/                         # Expo Router routes
+│   ├── (auth)/                  # Sign in, sign up, verification
+│   ├── (landing)/               # Mobile landing screen
+│   ├── (app)/(tabs)/            # Protected dashboard/settings tabs
+│   ├── _layout.tsx              # Root app layout
+│   └── index.tsx                # Auth-aware entry route
+├── assets/                      # App icons, splash, brand assets
+├── ScreenShots/                 # README screenshots
 ├── src/
-│   ├── components/            # Reusable UI components
-│   ├── hooks/                 # Custom React hooks
-│   ├── lib/                   # Utilities, API client, providers
-│   ├── store/                 # Zustand state stores
-│   ├── types/                 # TypeScript type definitions
-│   └── utils/                 # Helper functions and constants
-├── app.json                   # Expo configuration
-├── app.tsx                    # App entry point
+│   ├── components/              # Reusable React Native UI
+│   ├── hooks/                   # API hooks
+│   ├── lib/                     # API client, providers, dates
+│   ├── store/                   # Zustand stores
+│   ├── types/                   # Shared TypeScript types
+│   └── utils/                   # Utility exports
+├── app.json                     # Expo config
+├── eas.json                     # EAS build profiles
 ├── package.json
 └── tsconfig.json
 ```
 
-## 🔌 API Integration
-
-The app connects to the EchoOwl backend API (Spring Boot) at `http://localhost:8080` by default.
-
-### Available Endpoints
-
-- `GET /api/auth/getDatabaseSyncStatus` - Check auth sync status
-- `GET /api/category/getEventCategories` - Fetch all categories
-- `POST /api/category/createEventCategory` - Create new category
-- `POST /api/category/deleteCategory` - Delete category
-- `GET /api/category/getEventsByCategoryName` - Get events for a category
-- `GET /api/payment/getUserPlan` - Get user's plan
-- `POST /api/payment/createCheckoutSession` - Create Stripe session
-- `GET /api/project/getUsage` - Get usage statistics
-- `POST /api/project/setDiscordID` - Set Discord ID
-
-## 🔐 Environment Variables
-
-```env
-# Clerk (Required)
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-
-# API Base URL (Optional - defaults to localhost:8080 in dev)
-EXPO_PUBLIC_API_URL=http://localhost:8080
-```
-
-## 📦 Building for Production
-
-### Build with Expo Application Services (EAS)
-
-1. **Set up EAS:**
-   ```bash
-   eas build --platform all
-   ```
-
-2. **Configure in `app.json`:**
-   - Update `extra.eas.projectId`
-   - Update package names for iOS and Android
-
-3. **Submit to stores:**
-   ```bash
-   eas submit --platform ios
-   eas submit --platform android
-   ```
-
-## 🧪 Development
-
-### Running Locally
+## 🧪 Quality Checks
 
 ```bash
-# Terminal 1: Backend
-cd backend
-mvn spring-boot:run
-
-# Terminal 2: Mobile app
-cd app
-pnpm start
+npm run typecheck
+npm run lint
 ```
 
-### Hot Reloading
+## 🧯 Troubleshooting
 
-Expo supports fast refresh - changes to your code will automatically update on connected devices.
+| Problem | What to Check |
+|---|---|
+| APK closes immediately | Verify `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` and `EXPO_PUBLIC_API_URL` are present in the EAS build profile |
+| API calls fail on phone | Do not use `localhost`; use a deployed backend URL or reachable LAN IP |
+| Clerk auth fails | Confirm the publishable key and Clerk dashboard settings |
+| Old icon still appears | Uninstall the old APK or clear launcher cache, then install a fresh EAS build |
+| Build fails | Run `npm run typecheck`, check `app.json`, then rebuild with EAS |
 
 ## 📚 Documentation
 
+- [Migration Guide](./MIGRATION.md)
 - [Expo Documentation](https://docs.expo.dev)
-- [Expo Router Guide](https://docs.expo.dev/routing/introduction)
-- [Clerk React Native](https://clerk.com/docs/sdks/react-native)
+- [Expo Router](https://docs.expo.dev/routing/introduction)
+- [EAS Build](https://docs.expo.dev/build/introduction)
+- [Clerk Expo SDK](https://clerk.com/docs/references/expo/overview)
+- [TanStack Query](https://tanstack.com/query/latest)
 - [Zustand](https://github.com/pmndrs/zustand)
-- [React Query](https://tanstack.com/query/latest)
 
-## 🐛 Troubleshooting
+## 📸 App Screenshots
 
-### Connection Issues
-- Ensure backend is running on the expected URL
-- Check if API credentials are correctly set in `.env`
-- Verify Clerk configuration is correct
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_1.jpeg" alt="Landing page" width="180" />
+        <br />
+        <sub>Landing Page</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_2.jpeg" alt="Dashboard" width="180" />
+        <br />
+        <sub>Dashboard</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_3.jpeg" alt="Create category" width="180" />
+        <br />
+        <sub>Create Category</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_4.jpeg" alt="Category detail" width="180" />
+        <br />
+        <sub>Category Detail</sub>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_5.jpeg" alt="API key setting" width="180" />
+        <br />
+        <sub>API Key Setting</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_6.jpeg" alt="Upgrade page" width="180" />
+        <br />
+        <sub>Upgrade Page</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_7.jpeg" alt="Stripe payment page" width="180" />
+        <br />
+        <sub>Stripe Payment</sub>
+      </td>
+      <td align="center" width="25%">
+        <img src="./ScreenShots/SS_8.jpeg" alt="Account settings page" width="180" />
+        <br />
+        <sub>Account Settings</sub>
+      </td>
+    </tr>
+  </table>
+</div>
 
-### Build Issues
-- Clear cache: `pnpm install --force`
-- Reset Expo cache: `expo start --clear`
-- Rebuild Expo modules: `eas build --platform ios --profile preview`
+## 👨‍💻 About Author
 
-### Authentication Issues
-- Verify `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is set correctly
-- Check Clerk dashboard for API key configuration
-- Ensure deep linking is configured in app.json
+Full-Stack Software Developer with strong experience building scalable SaaS applications and enterprise-grade backend systems using Java, Spring Boot, React.js, Next.js, Node.js, MongoDB, React Native, and AWS. Proven ability to design secure payment systems, implement real-time and AI-powered features, and deliver production-grade web and mobile platforms. Proficient in REST API development, Spring Security, CI/CD pipelines, React Native & Expo mobile development, and cloud-native deployments. Active open-source contributor with multiple merged pull requests across community projects and a track record of delivering high-impact solutions in real-world environments.
 
-## 📝 License
-
-MIT License - See LICENSE file for details
-
-## 🤝 Contributing
-
-This is a demonstration/learning project. For contributions, please refer to the main EchoOwl repository.
-
----
-
-**Note**: This is the mobile version of EchoOwl. The backend remains unchanged and continues to run separately using Spring Boot and Java.
+| Link | URL |
+|---|---|
+| 🌐 Portfolio | <https://samp231004.github.io/Portfolio/> |
+| 🐙 GitHub | <https://github.com/SamP231004> |
+| 💼 LinkedIn | <https://www.linkedin.com/in/samp231004/> |

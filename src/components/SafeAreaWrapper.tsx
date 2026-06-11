@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react"
-import { View, StyleSheet, ViewStyle, ScrollViewProps } from "react-native"
+import { View, StyleSheet, ViewStyle } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 interface SafeAreaWrapperProps {

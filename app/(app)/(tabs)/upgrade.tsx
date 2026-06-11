@@ -53,7 +53,7 @@ export default function UpgradeScreen() {
         useCallback(() => {
             refetchPlan();
             refetchUsage();
-        }, [])
+        }, [refetchPlan, refetchUsage])
     );
 
     useEffect(() => {
@@ -95,7 +95,7 @@ export default function UpgradeScreen() {
 
         return () =>
             subscription.remove();
-    }, []);
+    }, [refetchPlan, refetchUsage]);
 
     const checkoutMutation =
         useCreateMobileCheckoutSession();

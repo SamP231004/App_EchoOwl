@@ -1,486 +1,256 @@
-# EchoOwl: Next.js to React Native + Expo Migration Guide
+# 🧭 EchoOwl Migration Guide
 
-## Overview
+This document explains the migration of EchoOwl from a Next.js web app to a React Native + Expo mobile app.
 
-This document outlines the complete migration of EchoOwl from a Next.js web application to a React Native + Expo mobile application (version 54.0.8).
+The goal of the migration was to keep the same backend and product workflow while creating a native mobile experience for authentication, dashboard monitoring, category management, usage tracking, and Stripe-powered upgrades.
 
-## Key Changes & Migration Patterns
+## 📌 Migration Summary
 
-### 1. Project Structure
+| Area | Before | After |
+|---|---|---|
+| App shell | Next.js App Router | Expo Router |
+| UI runtime | React DOM | React Native |
+| Styling | CSS / Tailwind-style web layout | React Native `StyleSheet` |
+| Auth | Clerk for Next.js | Clerk Expo SDK |
+| Data layer | Web API client | Axios REST client |
+| State | React Query focused | React Query + Zustand |
+| Secure storage | Browser/session storage patterns | Expo Secure Store |
+| Deployment | Web hosting | Expo EAS Android APK |
+| Backend | Spring Boot | Spring Boot unchanged |
 
-#### Before (Next.js)
-```
+## 🏗️ Project Structure
+
+### Before: Next.js
+
+```text
 .
 ├── src/
-│   ├── app/          # Next.js App Router
-│   ├── components/   # React components
-│   ├── lib/          # Utilities
-│   └── hooks/        # Custom hooks
-├── prisma/          # Database schema
+│   ├── app/                    # Next.js App Router
+│   ├── components/             # Web components
+│   ├── hooks/                  # Web hooks
+│   └── lib/                    # Web utilities
+├── prisma/                     # Database schema
 └── package.json
 ```
 
-#### After (React Native + Expo)
-```
-app/
-├── app/             # Expo Router (file-based routing)
+### After: React Native + Expo
+
+```text
+.
+├── app/                        # Expo Router routes
+│   ├── (auth)/                 # Sign in, sign up, verification
+│   ├── (landing)/              # Landing screen
+│   └── (app)/(tabs)/           # Protected mobile app screens
 ├── src/
-│   ├── components/  # React Native components
-│   ├── hooks/       # Custom hooks
-│   ├── lib/         # Utilities, API client
-│   ├── store/       # Zustand state management
-│   ├── types/       # TypeScript types
-│   └── utils/       # Constants and helpers
+│   ├── components/             # React Native components
+│   ├── hooks/                  # React Query hooks
+│   ├── lib/                    # API client, providers, utilities
+│   ├── store/                  # Zustand stores
+│   ├── types/                  # Shared TypeScript types
+│   └── utils/                  # Helper exports
+├── assets/                     # Icons, splash, brand files
+├── ScreenShots/                # Mobile screenshots
+├── app.json                    # Expo config
+├── eas.json                    # EAS build profiles
 └── package.json
 ```
 
-### 2. Component Migration
+## 🧩 Component Migration
 
-#### Web Components → React Native Components
-
-| Web (Next.js) | Mobile (React Native) | Notes |
+| Web Component | React Native Equivalent | Notes |
 |---|---|---|
-| `<div>` | `<View>` | Main container |
-| `<p>`, `<span>` | `<Text>` | Text content |
-| `<button>` | `<TouchableOpacity>` + `<Button>` | User interactions |
-| `<input>` | `<TextInput>` | Input fields |
-| `<form>` | Form validation with `react-hook-form` | Form handling |
-| CSS/Tailwind | `StyleSheet` API | Styling |
-| `next/link` | `expo-router` | Navigation |
-| `next/router` | `useRouter` from `expo-router` | Routing |
+| `<div>` | `<View>` | Layout container |
+| `<p>`, `<span>`, headings | `<Text>` | All text must live inside `Text` |
+| `<button>` | `<TouchableOpacity>` / custom `Button` | Press interactions |
+| `<input>` | `<TextInput>` | Native text input |
+| `<form>` | `react-hook-form` + handlers | No browser form submit |
+| CSS classes | `StyleSheet.create` | Native styling object |
+| `next/link` | `Link` / `useRouter` from Expo Router | Native navigation |
+| Browser modal | React Native modal components | Mobile-first interaction |
 
-#### Example: Button Component
+### Example
 
-**Before (Next.js + Tailwind):**
 ```tsx
-<button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-  Click me
-</button>
-```
-
-**After (React Native):**
-```tsx
-<TouchableOpacity 
-  style={[styles.button, { backgroundColor: "#2563EB" }]}
-  onPress={handlePress}
->
-  <Text style={styles.buttonText}>Click me</Text>
+<TouchableOpacity style={styles.button} onPress={handlePress}>
+  <Text style={styles.buttonText}>Create Category</Text>
 </TouchableOpacity>
 
 const styles = StyleSheet.create({
   button: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    alignItems: "center",
+    backgroundColor: "#3B5CCC",
+    borderRadius: 14,
+    height: 56,
+    justifyContent: "center",
   },
   buttonText: {
     color: "#FFFFFF",
-  }
-})
-```
-
-### 3. State Management Migration
-
-#### Before (Next.js): Client-side only with React Query
-```tsx
-const { data: categories } = useQuery({
-  queryKey: ["categories"],
-  queryFn: async () => {
-    const res = await client.category.getEventCategories.$get()
-    return res.json()
-  }
-})
-```
-
-#### After (React Native + Zustand + React Query)
-```tsx
-// Store (Zustand)
-export const useCategoryStore = create((set) => ({
-  categories: [],
-  setCategories: (categories) => set({ categories }),
-}))
-
-// Hook
-export const useEventCategories = () => {
-  const setCategories = useCategoryStore((state) => state.setCategories)
-  return useQuery({
-    queryKey: ["user-event-categories"],
-    queryFn: async () => {
-      const response = await apiService.category.getEventCategories()
-      setCategories(response.categories)
-      return response.categories
-    },
-  })
-}
-```
-
-### 4. Authentication Changes
-
-#### Before (Next.js with Clerk)
-- Used `@clerk/nextjs` for server-side and client-side auth
-- Clerk middleware for route protection
-- `currentUser()` helper for server components
-
-#### After (React Native with Clerk)
-- Uses `@clerk/clerk-react-native` for native auth
-- `ClerkProvider` wrapper around app
-- `useAuth()` hook for user information
-- Token stored in secure store (Expo Secure Store)
-
-```tsx
-import { useAuth } from "@clerk/clerk-react-native"
-
-export default function MyScreen() {
-  const { user, isSignedIn, signOut } = useAuth()
-  
-  return (
-    <View>
-      <Text>{user?.emailAddresses[0].emailAddress}</Text>
-      <Button onPress={signOut} title="Sign Out" />
-    </View>
-  )
-}
-```
-
-### 5. API Client Migration
-
-#### Before (Next.js with Hono)
-```tsx
-import { hc } from "hono/client"
-
-export const baseClient = hc<any>(getBaseUrl(), {
-  fetch: async (input, init) => {
-    const token = await getClerkToken()
-    // Add authorization header
-  }
-})
-```
-
-#### After (React Native with Axios)
-```tsx
-import axios from "axios"
-import * as SecureStore from "expo-secure-store"
-
-export const getApiClient = async () => {
-  return axios.create({
-    baseURL: getBaseURL(),
-    headers: { "Content-Type": "application/json" },
-  })
-}
-```
-
-### 6. Styling Approach
-
-#### Before (Next.js + Tailwind)
-```tsx
-<div className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
-  <span className="text-lg font-semibold text-gray-900">Title</span>
-</div>
-```
-
-#### After (React Native + StyleSheet)
-```tsx
-<View style={styles.container}>
-  <Text style={styles.title}>Title</Text>
-</View>
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    fontSize: 16,
+    fontWeight: "700",
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-  }
 })
 ```
 
-### 7. Navigation Structure
+## 🔐 Authentication Migration
 
-#### Before (Next.js App Router)
-```
-src/app/
-├── layout.tsx           # Root layout
-├── dashboard/
-│   ├── page.tsx         # /dashboard
-│   └── category/
-│       └── [name]/
-│           └── page.tsx # /dashboard/category/[name]
-├── (auth)/
-│   ├── sign-in/page.tsx
-│   └── sign-up/page.tsx
-└── (landing)/
-    └── page.tsx
-```
+### Before
 
-#### After (Expo Router)
-```
-app/
-├── _layout.tsx          # Root layout
-├── (auth)/
-│   ├── _layout.tsx
-│   ├── sign-in.tsx
-│   ├── sign-up.tsx
-│   └── welcome.tsx
-└── (app)/
-    ├── _layout.tsx      # Tab navigator
-    └── (tabs)/
-        ├── _layout.tsx
-        ├── dashboard/
-        │   ├── _layout.tsx
-        │   ├── index.tsx
-        │   └── category.tsx
-        ├── activity.tsx
-        └── settings.tsx
-```
+- `@clerk/nextjs`
+- Middleware-based route protection
+- Server helpers such as `currentUser()`
+- Browser redirect flows
 
-### 8. Form Handling
+### After
 
-#### Before (Next.js with shadcn/ui)
-```tsx
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+- `@clerk/expo`
+- `ClerkProvider` in the root layout
+- `useAuth`, `useSignIn`, and `useSignUp`
+- Expo Secure Store token cache
+- Expo Router protected route groups
 
-const form = useForm({ resolver: zodResolver(schema) })
-const onSubmit = form.handleSubmit(async (data) => {
-  // Submit form
-})
+The standalone APK needs these build-time values:
 
-return (
-  <form onSubmit={onSubmit}>
-    <Input {...form.register("email")} />
-  </form>
-)
-```
-
-#### After (React Native)
-```tsx
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-
-const { register, handleSubmit, watch, formState: { errors } } = 
-  useForm({ resolver: zodResolver(schema) })
-
-const onSubmit = handleSubmit(async (data) => {
-  // Submit form
-})
-
-return (
-  <View>
-    <Input 
-      value={email}
-      onChangeText={setEmail}
-      error={errors.email?.message}
-    />
-    <Button onPress={onSubmit} />
-  </View>
-)
-```
-
-### 9. Data Fetching & Caching
-
-#### Before (Next.js)
-- Used Prisma Client directly in server components
-- Hono for API endpoints
-- React Query for client-side data fetching
-
-#### After (React Native)
-- Only uses REST API (no direct database access from mobile)
-- Axios for HTTP requests
-- React Query for caching
-- Zustand for client state
-
-### 10. Environment Variables
-
-#### Before (Next.js)
 ```env
-NEXT_PUBLIC_API_URL=
-DATABASE_URL=
-CLERK_SECRET_KEY=
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+EXPO_PUBLIC_API_URL=https://your-backend-url.com
 ```
 
-#### After (React Native with Expo)
-```env
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=
-EXPO_PUBLIC_API_URL=
-```
+## 🔌 API Client Migration
 
-**Note:** Variables prefixed with `EXPO_PUBLIC_` are available at build time.
+The backend remains unchanged. The mobile app communicates with the same Spring Boot API through Axios.
 
-## Screen-by-Screen Mapping
+| Feature | Endpoint |
+|---|---|
+| Auth sync | `GET /api/auth/getDatabaseSyncStatus` |
+| Categories | `GET /api/category/getEventCategories` |
+| Create category | `POST /api/category/createEventCategory` |
+| Delete category | `POST /api/category/deleteCategory` |
+| Category events | `GET /api/category/getEventsByCategoryName` |
+| Usage | `GET /api/project/getUsage` |
+| Plan | `GET /api/payment/getUserPlan` |
+| Mobile checkout | `POST /api/payment/createMobileCheckoutSession` |
+| Discord ID | `POST /api/project/setDiscordID` |
+| Events webhook | `POST /api/events` |
 
-| Next.js Page | React Native Screen | Functionality |
+## 🧠 State Management
+
+| Concern | Tool |
+|---|---|
+| Server cache | TanStack React Query |
+| Auth/user state | Clerk hooks + local stores |
+| Category state | Zustand |
+| Usage state | Zustand |
+| Token persistence | Expo Secure Store |
+
+React Query handles API freshness and retry behavior, while Zustand keeps lightweight app state available across screens.
+
+## 🧭 Navigation Mapping
+
+| Web Route | Mobile Route | Purpose |
 |---|---|---|
-| `/sign-in` | `/(auth)/sign-in.tsx` | Email/password sign-in |
-| `/sign-up` | `/(auth)/sign-up.tsx` | Email/password registration |
-| `/welcome` | `/(auth)/welcome.tsx` | Email verification |
-| `/dashboard` | `/(app)/(tabs)/dashboard/index.tsx` | Main dashboard with categories |
-| `/dashboard/category/[name]` | `/(app)/(tabs)/dashboard/category.tsx` | Category details & events |
-| `/dashboard/settings` | `/(app)/(tabs)/settings.tsx` | Account & plan settings |
-| `/pricing` | Included in settings | Plan upgrade |
-| `/` | Landing page removed | Not needed in mobile app |
+| `/` | `app/(landing)/index.tsx` | Landing page |
+| `/sign-in` | `app/(auth)/sign-in.tsx` | Sign in |
+| `/sign-up` | `app/(auth)/sign-up.tsx` | Sign up |
+| `/verify-email` | `app/(auth)/verify-email.tsx` | Email verification |
+| `/dashboard` | `app/(app)/(tabs)/dashboard/index.tsx` | Category dashboard |
+| `/dashboard/category/[name]` | `app/(app)/(tabs)/dashboard/category/[name].tsx` | Category detail |
+| `/settings` | `app/(app)/(tabs)/settings.tsx` | Account settings |
+| `/api-keys` | `app/(app)/(tabs)/api-keys.tsx` | API key settings |
+| `/upgrade` | `app/(app)/(tabs)/upgrade.tsx` | Plan upgrade |
 
-## API Integration
+## 📱 Mobile Screens
 
-### Unchanged Backend
-The Spring Boot backend remains **completely unchanged**. The React Native app communicates with the same API endpoints:
+| Screenshot | Screen |
+|---|---|
+| `SS_1.jpeg` | Landing page |
+| `SS_2.jpeg` | Dashboard |
+| `SS_3.jpeg` | Create category |
+| `SS_4.jpeg` | Category detail |
+| `SS_5.jpeg` | API key setting |
+| `SS_6.jpeg` | Upgrade page |
+| `SS_7.jpeg` | Stripe integration payment page |
+| `SS_8.jpeg` | Account setting page |
 
-```
-Base URL: http://localhost:8080 (dev) or https://your-backend.com (prod)
+## 📸 Screenshot Gallery
 
-Endpoints:
-- GET /api/auth/getDatabaseSyncStatus
-- GET /api/category/getEventCategories
-- POST /api/category/createEventCategory
-- POST /api/category/deleteCategory
-- GET /api/category/getEventsByCategoryName
-- GET /api/payment/getUserPlan
-- POST /api/payment/createCheckoutSession
-- GET /api/project/getUsage
-- POST /api/project/setDiscordID
-- POST /api/events
-- POST /api/webhooks/stripe
-```
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><img src="./ScreenShots/SS_1.jpeg" alt="Landing page" width="170" /><br /><sub>Landing</sub></td>
+      <td align="center"><img src="./ScreenShots/SS_2.jpeg" alt="Dashboard" width="170" /><br /><sub>Dashboard</sub></td>
+      <td align="center"><img src="./ScreenShots/SS_3.jpeg" alt="Create category" width="170" /><br /><sub>Create Category</sub></td>
+      <td align="center"><img src="./ScreenShots/SS_4.jpeg" alt="Category detail" width="170" /><br /><sub>Category Detail</sub></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="./ScreenShots/SS_5.jpeg" alt="API key setting" width="170" /><br /><sub>API Key</sub></td>
+      <td align="center"><img src="./ScreenShots/SS_6.jpeg" alt="Upgrade page" width="170" /><br /><sub>Upgrade</sub></td>
+      <td align="center"><img src="./ScreenShots/SS_7.jpeg" alt="Stripe payment page" width="170" /><br /><sub>Stripe</sub></td>
+      <td align="center"><img src="./ScreenShots/SS_8.jpeg" alt="Account setting page" width="170" /><br /><sub>Account</sub></td>
+    </tr>
+  </table>
+</div>
 
-## Removed Features
+## ✅ Feature Status
 
-Since this is a mobile app, some web-specific features were removed or simplified:
-
-- **Landing Page**: Not needed on mobile (app is downloaded directly)
-- **Pricing Page**: Integrated into Settings
-- **Navbar**: Replaced with bottom tab navigation
-- **Responsive Grid**: Simplified for mobile screens
-- **Server-side Rendering**: Not applicable to mobile
-
-## Added Features (Mobile-specific)
-
-- **Bottom Tab Navigation**: Easy access to main sections
-- **Modal Screens**: Better UX for modals in mobile
-- **Secure Storage**: Token storage in secure enclave
-- **Native Notifications**: Ready for push notifications
-- **Haptic Feedback**: Ready for vibration feedback
-- **Share Functionality**: Native share integration ready
-
-## Development Workflow
-
-### Setting Up Locally
-
-1. **Backend (unchanged):**
-   ```bash
-   cd backend
-   mvn spring-boot:run
-   ```
-
-2. **Mobile App (new):**
-   ```bash
-   cd app
-   pnpm install
-   pnpm start
-   # Scan QR code with Expo Go or run on emulator
-   ```
-
-### Key Differences in Development
-
-| Aspect | Next.js | React Native |
+| Feature | Status | Notes |
 |---|---|---|
-| Dev Server | `npm run dev` | `expo start` |
-| Hot Reload | Automatic | Fast Refresh (automatic) |
-| Preview | Browser | Expo Go app or emulator |
-| Debugging | Dev Tools | React Native Debugger |
-| TypeScript | Built-in | TypeScript support |
+| Sign in / sign up | ✅ Done | Clerk Expo SDK |
+| Email verification | ✅ Done | Clerk verification flow |
+| Dashboard | ✅ Done | Category list and usage overview |
+| Create category | ✅ Done | Mobile modal flow |
+| Category detail | ✅ Done | Event list per category |
+| Plan upgrade | ✅ Done | Stripe checkout via backend |
+| Account settings | ✅ Done | Sign out and account options |
+| API key screen | ⚠️ Partial | Use web version to edit/view sensitive keys |
+| Discord key management | ⚠️ Partial | Use web version for key management |
 
-## Performance Considerations
+## 🚧 Removed or Simplified Web Features
 
-### Mobile-specific Optimizations
+- Server-side rendering is not used in mobile.
+- Browser-specific layout and hover states were replaced with native interactions.
+- Web navbar was replaced with mobile navigation.
+- API key and Discord key editing are currently handled by the web version.
+- Direct database access remains backend-only.
 
-1. **API Caching**: React Query caches aggressively
-2. **State Management**: Zustand for lightweight state
-3. **Code Splitting**: Expo handles this automatically
-4. **Image Optimization**: Use `expo-image` for better caching
-5. **Lazy Loading**: Built into Expo Router
+## 📦 EAS Build Notes
 
-## Testing Strategy
+Preview APK:
 
-### Unit Tests
 ```bash
-pnpm test
+eas build --platform android --profile preview
 ```
 
-### E2E Tests with Detox
+The Android keystore is managed by Expo. Future builds should use the same Expo account so new APKs install as updates over older versions.
+
+## 🧪 Verification
+
 ```bash
-pnpm test:e2e
+npm run typecheck
+npm run lint
 ```
 
-### Manual Testing
-- Use Expo Go for quick testing
-- Test on physical device before release
-- Test on both iOS and Android
+## 🧯 Troubleshooting
 
-## Deployment
+| Issue | Fix |
+|---|---|
+| APK closes immediately | Check EAS environment values for Clerk and API URL |
+| API works locally but not on phone | Replace `localhost` with a deployed backend URL or LAN IP |
+| Clerk fails in APK | Confirm `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is included in the EAS profile |
+| TypeScript path warnings | Avoid deprecated `baseUrl`; keep aliases mapped to `./src/*` paths |
+| Old launcher icon remains | Uninstall old APK or clear launcher cache before installing the new build |
 
-### Development
-```bash
-expo start --clear
-```
+## 🔗 Related Links
 
-### Preview Build
-```bash
-eas build --platform all --profile preview
-```
-
-### Production Build
-```bash
-eas build --platform all --profile production
-eas submit --platform ios
-eas submit --platform android
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Module not found"**
-   - Clear cache: `expo start --clear`
-   - Reinstall: `pnpm install --force`
-
-2. **"Auth token not found"**
-   - Check Secure Store access
-   - Verify Clerk credentials in .env
-
-3. **"API connection refused"**
-   - Verify backend is running
-   - Check API URL in environment
-
-4. **"Build fails on EAS"**
-   - Check app.json configuration
-   - Verify credentials and signing
-
-## Conclusion
-
-The React Native + Expo migration maintains feature parity with the original Next.js application while providing a native mobile experience. The backend remains unchanged, allowing for continued development and updates without affecting the mobile app.
-
-### Resources
-
+- [README](./README.md)
 - [Expo Documentation](https://docs.expo.dev)
-- [React Native Guide](https://reactnative.dev)
-- [Expo Router Docs](https://docs.expo.dev/routing/introduction)
-- [Clerk React Native SDK](https://clerk.com/docs/sdks/react-native)
-- [EAS Build Documentation](https://docs.expo.dev/build/introduction)
+- [Expo Router](https://docs.expo.dev/routing/introduction)
+- [EAS Build](https://docs.expo.dev/build/introduction)
+- [React Native](https://reactnative.dev)
+- [Clerk Expo SDK](https://clerk.com/docs/references/expo/overview)
 
 ---
 
-**Version**: 0.1.0  
-**Expo Version**: 54.0.8  
-**React Native Version**: 0.76.5  
-**Last Updated**: 2026-06-05
+**Version:** 0.1.0  
+**Expo SDK:** 54  
+**React Native:** 0.81.5  
+**Last Updated:** 2026-06-11

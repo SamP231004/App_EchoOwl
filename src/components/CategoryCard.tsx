@@ -12,7 +12,6 @@ import {
     ArrowRight,
 } from "lucide-react-native";
 import {
-    format,
     formatDistanceToNow,
 } from "date-fns";
 import {

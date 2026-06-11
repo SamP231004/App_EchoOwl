@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from "axios"
-import * as SecureStore from "expo-secure-store"
 import superjson from "superjson"
 
 type AuthTokenProvider = () => Promise<string | null>
@@ -13,19 +12,6 @@ export const setAuthTokenProvider = (provider: AuthTokenProvider | null) => {
 // Get the API base URL
 export const getBaseURL = () => {
   return process.env.EXPO_PUBLIC_API_URL
-}
-
-// Helper to mimic the web client's serialization logic exactly
-const serializeWithSuperJSON = (data: any): any => {
-  if (typeof data !== "object" || data === null) {
-    return data
-  }
-  return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [
-      key,
-      superjson.stringify(value),
-    ])
-  )
 }
 
 // Create axios instance
@@ -57,7 +43,7 @@ export const getApiClient = async (): Promise<AxiosInstance> => {
 
           try {
             return JSON.parse(data)
-          } catch (error) {
+          } catch {
             return data
           }
         },
