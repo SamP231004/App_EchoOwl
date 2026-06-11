@@ -13,6 +13,7 @@ pnpm-debug.log*
 # Build
 dist/
 build/
+*.apk
 .expo/
 .expo-shared/
 *.jks
