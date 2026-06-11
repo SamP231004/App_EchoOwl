@@ -20,7 +20,7 @@ export function DashboardEmptyState({
     return (
         <View style={styles.container}>
             <Image
-                source={require("assets/images/brand-asset-wave.png")}
+                source={require("../../assets/images/brand-asset-wave.png")}
                 style={styles.image}
             />
 

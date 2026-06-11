@@ -39,7 +39,7 @@ export function AppHeader({
                 )}
 
                 <Image
-                    source={require("assets/images/brand-asset-profile-picture.png")}
+                    source={require("../../assets/images/brand-asset-profile-picture.png")}
                     style={styles.logoImage}
                 />
 
